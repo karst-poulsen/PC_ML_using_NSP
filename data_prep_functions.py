@@ -2,7 +2,7 @@ import re
 
 import matplotlib.pyplot as plt
 
-from interpro_scraping import interpro_scraping_pandas
+# from interpro_scraping import interpro_scraping_pandas
 from Bio.SeqUtils.ProtParam import ProteinAnalysis
 import pandas as pd
 import numpy as np
@@ -502,8 +502,7 @@ def clean_up_data_biopy(raw_data, proteins_ids):
 
 def clean_up_data_mass_spec(raw_data):
     # calculate average relative abundance from triplicate results
-    raw_data["Avg NP Relative Abundance"] = (raw_data["NP Relative Abundance_1"] + raw_data["NP Relative Abundance_2"] +
-                                             raw_data["NP Relative Abundance_3"]) / 3
+    raw_data["Avg NP Relative Abundance"] = raw_data["NP"]
     # remove any protein with avg zero abundance
     raw_data["Avg NP Relative Abundance"] = raw_data["Avg NP Relative Abundance"].replace(0, np.nan)
     raw_data.dropna(subset=["Avg NP Relative Abundance"], inplace=True)
@@ -511,9 +510,9 @@ def clean_up_data_mass_spec(raw_data):
     Abudance_sum = raw_data["Avg NP Relative Abundance"].sum()
     raw_data['NP_%_Abundance'] = (raw_data["Avg NP Relative Abundance"] / Abudance_sum) * 100
     # calculate enrichement
-    raw_data["Enrichment"] = np.log2(raw_data["Avg NP Relative Abundance"] / raw_data["FBS Relative Abundance"])
+    raw_data["Enrichment"] = np.log2(raw_data["Avg NP Relative Abundance"] / raw_data["Serum"])
 
-    return raw_data[["Accession", "NP_%_Abundance", "Enrichment", "FBS Relative Abundance"]]
+    return raw_data[["Accession", "NP_%_Abundance", "Enrichment", "Serum"]]
 
 
 def clean_up_data_biopy_no_ss_flex(raw_data):
