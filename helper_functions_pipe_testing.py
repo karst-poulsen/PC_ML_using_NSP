@@ -13,8 +13,8 @@ def clean_up_data_biopy(raw_data, proteins_ids):
     raw_data = raw_data.fillna(0)  # fill nans
 
     # remove proteins removed in mass spec clean up
-    tempdf = proteins_ids.merge(raw_data, how='inner', left_on="Accession", right_on="Entry")
-    cleaned_data = tempdf[['Entry', 'Protein names', 'Sequence', 'Length', 'Mass']]
+    tempdf = proteins_ids.merge(raw_data, how='inner', left_on="Entry", right_on="Entry")
+    cleaned_data = tempdf[['Entry', 'Sequence', 'Length', 'Mass']]
     cleaned_data = cleaned_data.fillna(0)
 
     # turns sequence column into series that will be used to iterate over when calculating biopython features
@@ -24,9 +24,9 @@ def clean_up_data_biopy(raw_data, proteins_ids):
     first_pass = True
 
     for seq in sequences:
-        # determines if X or U are present in sequence
-        X_Presence = seq.find("X")
-        U_Presence = seq.find("U")
+        # determines if X (any aa) or U (seloncysteine) are present in sequence and replaces them with L (leucine most common) or C (cysteine)
+        seq = seq.replace("X","L")
+        seq = seq.replace("U","C")
 
         # turns sequence into biopython sequence class
         analyzed_seq = ProteinAnalysis(seq)
@@ -40,57 +40,17 @@ def clean_up_data_biopy(raw_data, proteins_ids):
         aa_values = alphabetize_aa(reg_aa)
 
         # calculates molecular by replacing X with L if X is present
-        if X_Presence == -1:
-            mw = analyzed_seq.molecular_weight()  # MW
-        else:
-            X_loc_index = list(find_all(seq, 'X'))
-            seq_list = string_to_list(seq)
-            seq_list_new = replace_all(seq_list, X_loc_index, "L")
-            seq_adj = ''.join(seq_list_new)
-            analyzed_seq_adj = ProteinAnalysis(seq_adj)
-            mw = analyzed_seq_adj.molecular_weight()
+        mw = analyzed_seq.molecular_weight()  # MW
 
         # calculates aromaticity of protein
         aromat = analyzed_seq.aromaticity()
 
         # calculates instability, flex, and gravy while dealing with "X" and "U" by replacing with L and C if present
-        if X_Presence == -1 and U_Presence == -1:
-            instab = analyzed_seq.instability_index()  # float
-            flex = analyzed_seq.flexibility()  # returns a list
-            gravy = analyzed_seq.gravy()
-        elif X_Presence != -1 and U_Presence == -1:
-            X_loc_index = list(find_all(seq, 'X'))
-            seq_list = string_to_list(seq)
-            seq_list_new = replace_all(seq_list, X_loc_index, "L")
-            seq_adj = ''.join(seq_list_new)
-            analyzed_seq_adj = ProteinAnalysis(seq_adj)
-            instab = analyzed_seq_adj.instability_index()
-            flex = analyzed_seq_adj.flexibility()
-            gravy = analyzed_seq_adj.gravy()
-        elif X_Presence == -1 and U_Presence != -1:
-            U_loc_index = list(find_all(seq, 'U'))
-            seq_list = string_to_list(seq)
-            seq_list_new = replace_all(seq_list, U_loc_index, "C")
-            seq_adj = ''.join(seq_list_new)
-            analyzed_seq_adj = ProteinAnalysis(seq_adj)
-            instab = analyzed_seq_adj.instability_index()
-            flex = analyzed_seq_adj.flexibility()
-            gravy = analyzed_seq_adj.gravy()
-        elif X_Presence != -1 and U_Presence != -1:
-            X_loc_index = list(find_all(seq, 'X'))
-            U_loc_index = list(find_all(seq, 'U'))
-            seq_list = string_to_list(seq)
-            seq_list_X_replaced = replace_all(seq_list, X_loc_index, "L")
-            seq_list_X_and_U_replaced = replace_all(seq_list_X_replaced, U_loc_index, "C")
-            seq_adj = ''.join(seq_list_X_and_U_replaced)
-            analyzed_seq_adj = ProteinAnalysis(seq_adj)
-            instab = analyzed_seq_adj.instability_index()
-            flex = analyzed_seq_adj.flexibility()
-            gravy = analyzed_seq_adj.gravy()
-
+        instab = analyzed_seq.instability_index()  # float
+        flex = analyzed_seq.flexibility()  # returns a list
+        gravy = analyzed_seq.gravy()
         # calculates isoelectric point
         iso = analyzed_seq.isoelectric_point()
-
         # calculates secondary structure presence
         secStruct = analyzed_seq.secondary_structure_fraction()  # tuple of three floats (helix, turn, sheet)
         secStruct_disorder = 1 - sum(secStruct)
@@ -161,6 +121,30 @@ def alphabetize_aa(aa_dict):
     aa_list.sort()
     return [aa_dict[aa] for aa in aa_list]
 
+def clean_up_data_mass_spec(raw_data):
+    # calculate average relative abundance from triplicate results
+    raw_data["Avg NP Relative Abundance"] = raw_data["NP"]
+    # remove any protein with avg zero abundance
+    raw_data["Avg NP Relative Abundance"] = raw_data["Avg NP Relative Abundance"].replace(0, np.nan)
+    raw_data.dropna(subset=["Avg NP Relative Abundance"], inplace=True)
+    # calculate percent relative abundance
+    Abudance_sum = raw_data["Avg NP Relative Abundance"].sum()
+    raw_data['NP_%_Abundance'] = (raw_data["Avg NP Relative Abundance"] / Abudance_sum) * 100
+    # calculate enrichement
+    raw_data["Enrichment"] = np.log2(raw_data["Avg NP Relative Abundance"] / raw_data["Serum"])
+
+    return raw_data[["Accession", "NP_%_Abundance", "Enrichment", "Serum"]]
+
+def normalize_mass_length_1DF(df1):
+    max_length = df1['Length'].max()
+    max_mass = df1['Mass'].max()
+    max_mw = df1['molecular_weight'].max()
+
+    df1['length'] = df1['Length'] / max_length
+    df1['mass'] = df1['Mass'] / max_mass
+    df1['molecular_weight'] = df1['molecular_weight'] / max_mw
+
+    return df1
 
 if __name__ == "__main__":
     print(type(ProteinAnalysis))

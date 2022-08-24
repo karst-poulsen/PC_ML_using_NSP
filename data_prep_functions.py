@@ -384,7 +384,7 @@ def clean_up_data_biopy(raw_data, proteins_ids):
     raw_data = raw_data.fillna(0)  # fill nans
 
     # remove proteins removed in mass spec clean up
-    tempdf = proteins_ids.merge(raw_data, how='inner', left_on="Accession", right_on="Entry")
+    tempdf = proteins_ids.merge(raw_data, how='inner', left_on="Entry", right_on="Entry")
     cleaned_data = tempdf[['Entry', 'Protein names', 'Sequence', 'Length', 'Mass']]
     cleaned_data = cleaned_data.fillna(0)
 
