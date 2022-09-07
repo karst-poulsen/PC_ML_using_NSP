@@ -385,7 +385,7 @@ def clean_up_data_biopy(raw_data, proteins_ids):
 
     # remove proteins removed in mass spec clean up
     tempdf = proteins_ids.merge(raw_data, how='inner', left_on="Entry", right_on="Entry")
-    cleaned_data = tempdf[['Entry', 'Protein names', 'Sequence', 'Length', 'Mass']]
+    cleaned_data = tempdf[['Entry','NPID', 'Protein names', 'Sequence', 'Length', 'Mass']]
     cleaned_data = cleaned_data.fillna(0)
 
     # turns sequence column into series that will be used to iterate over when calculating biopython features
