@@ -216,8 +216,7 @@ def netsurfp_2_data_processing(unique_id_list, complete_netsurfp_df):
     # function after first iteration of loop
 
     for i in unique_id_list:
-        boolarray = complete_netsurfp_df['id'].str.contains(
-            i)  # creates a series where the current protein being analyzed is present in netsurfp database
+        boolarray = complete_netsurfp_df['id'].str.contains(i)  # creates a series where the current protein being analyzed is present in netsurfp database
         filtered = complete_netsurfp_df[boolarray]  # filters netsurfp data using series from above
         filtered.loc[:, 'class assignment'] = np.where(filtered.loc[:, 'rsa'] > 0.25, 'E', 'B')
         ##### WHY does this create setting withcopy warning!!?!!!
@@ -250,8 +249,7 @@ def netsurfp_2_data_processing(unique_id_list, complete_netsurfp_df):
             aa_exposed_frac_exposed = {'fraction_exposed_exposed_' + key: 0 for key, value in aa_dict.items()}
 
         else:
-            for j in exposed[
-                'seq']:  # goes how any of each amino acid is present in the subset of ammino acids that considered exposed
+            for j in exposed['seq']:  # goes how any of each amino acid is present in the subset of ammino acids that considered exposed
                 aa_dict[j] += 1
             # calculates the fraction each type of ammino acid makes up out of total exposed ammino acids and total amino acids
             aa_exposed_frac_total = {'fraction_total_exposed_' + key: value / total_aa for key, value in

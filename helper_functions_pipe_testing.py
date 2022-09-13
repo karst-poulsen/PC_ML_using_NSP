@@ -9,12 +9,12 @@ import numpy as np
 import scipy.stats
 from datetime import datetime
 
-def clean_up_data_biopy(raw_data, proteins_ids,col_list):
+def clean_up_data_biopy(raw_data):
     raw_data = raw_data.fillna(0)  # fill nans
 
     # remove proteins removed in mass spec clean up
-    tempdf = proteins_ids.merge(raw_data, how='inner', left_on="Entry", right_on="Entry")
-    cleaned_data = tempdf[col_list]
+    tempdf = raw_data.copy()
+    cleaned_data = tempdf[['Entry', 'Sequence', 'Length', 'Mass']]
     cleaned_data = cleaned_data.fillna(0)
 
     # turns sequence column into series that will be used to iterate over when calculating biopython features
@@ -22,11 +22,18 @@ def clean_up_data_biopy(raw_data, proteins_ids,col_list):
     # creates dataframe to store biopython features
     seq_data = pd.DataFrame([])
     first_pass = True
-
+    i=0
     for seq in sequences:
+        print(i)
+        i = i + 1
         # determines if X (any aa) or U (seloncysteine) are present in sequence and replaces them with L (leucine most common) or C (cysteine)
         seq = seq.replace("X","L")
         seq = seq.replace("U","C")
+        seq = seq.replace("B","N")
+        seq = seq.replace("(truncated)","")
+        seq = seq.replace("Z", "Q")
+        seq = seq.replace("J", "L")
+
 
         # turns sequence into biopython sequence class
         analyzed_seq = ProteinAnalysis(seq)
@@ -56,7 +63,10 @@ def clean_up_data_biopy(raw_data, proteins_ids,col_list):
         secStruct_disorder = 1 - sum(secStruct)
 
         # calculates stats for flex feature
-        flex_stat = (np.mean(flex), np.std(flex), np.var(flex), np.max(flex), np.min(flex), np.median(flex))
+        if len(seq) < 20:
+            flex_stat = (0, 0, 0, 0, 0, 0)
+        else:
+            flex_stat = (np.mean(flex), np.std(flex), np.var(flex), np.max(flex), np.min(flex), np.median(flex))
 
         # stores all info in dataframe
         temp_df = pd.DataFrame(
