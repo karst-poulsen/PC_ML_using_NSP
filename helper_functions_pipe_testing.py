@@ -24,9 +24,9 @@ def clean_up_data_biopy(raw_data):
     first_pass = True
     i=0
     for seq in sequences:
-        print(i)
         i = i + 1
         # determines if X (any aa) or U (seloncysteine) are present in sequence and replaces them with L (leucine most common) or C (cysteine)
+        seq_orig = seq
         seq = seq.replace("X","L")
         seq = seq.replace("U","C")
         seq = seq.replace("B","N")
@@ -46,7 +46,7 @@ def clean_up_data_biopy(raw_data):
         # alphabetize_aa function is line 26 of this script, orders dictionary in alphabetical order
         aa_values = alphabetize_aa(reg_aa)
 
-        # calculates molecular by replacing X with L if X is present
+        # calculates molecular weight
         mw = analyzed_seq.molecular_weight()  # MW
 
         # calculates aromaticity of protein
@@ -70,7 +70,7 @@ def clean_up_data_biopy(raw_data):
 
         # stores all info in dataframe
         temp_df = pd.DataFrame(
-            [[seq, *aa_values, mw, aromat, instab, *flex_stat, iso, *secStruct, secStruct_disorder, gravy]])
+            [[seq_orig, *aa_values, mw, aromat, instab, *flex_stat, iso, *secStruct, secStruct_disorder, gravy]])
 
         # stores all info of every run into collective dataframe
         if first_pass:
@@ -96,6 +96,7 @@ def clean_up_data_biopy(raw_data):
     # adds new features to protein details dataframe
     cleaned_data = pd.merge(cleaned_data, seq_data, on='Sequence')
     cleaned_data = cleaned_data.fillna(0)
+    print(i)
     return cleaned_data
 
 def string_to_list(str):
