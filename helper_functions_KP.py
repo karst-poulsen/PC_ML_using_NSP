@@ -34,9 +34,9 @@ def rand_forest_reg_fit(df,labels,out_name,test_size,estimator):
     b=list(zip(df.columns, feat_importances * 100))
     score=rfg.score(x_test,y_test)
     b.append(['Prediction Coefficient',score])
-    a = pd.DataFrame(b, columns=['feature', 'feat_importance'])
-    a.to_excel("Output_data/Featimportances"+str(out_name)+".xlsx")
-    return score
+    # a = pd.DataFrame(b, columns=['feature', 'feat_importance'])
+    # a.to_excel("Output_data/Featimportances"+str(out_name)+".xlsx")
+    return b
 
 if __name__ == "__main__":
     print(type(ProteinAnalysis))
