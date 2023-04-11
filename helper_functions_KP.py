@@ -16,7 +16,10 @@ from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import d2_tweedie_score
+from sklearn.model_selection import KFold
 
+
+plt.rcParams['figure.dpi'] = 300
 
 def feat_elim_rand(df, labels, out_name, feats, estimator, step):
     estimator = RandomForestRegressor(n_estimators=estimator)
@@ -49,18 +52,15 @@ def scram_score(df, label, model, identifier, test_percent):
     r2s = []
     pearson = []
     mse = []
-    accuracy = []
     x_train, x_test, y_train, y_test = train_test_split(df, label, test_size=test_percent, random_state=42)
     model.fit(x_train, y_train)
     predictions = model.predict(x_test)
     r2 = r2_score(y_test, predictions)
     corr, _ = pearsonr(y_test, predictions)
     mse_score = mean_squared_error(y_test, predictions)
-    acc_score = accuracy_score(y_test, predictions.round())
     r2s.append(r2)
     pearson.append(corr)
     mse.append(mse_score)
-    accuracy.append(acc_score)
     feat_import = model.feature_importances_
     feats.append('allfeats')
     feat_import = np.insert(feat_import, [0], 0)
@@ -73,23 +73,21 @@ def scram_score(df, label, model, identifier, test_percent):
         r2 = r2_score(y_test, predictions)
         corr, _ = pearsonr(y_test, predictions)
         mse_score = mean_squared_error(y_test, predictions)
-        acc_score = accuracy_score(y_test, predictions.round())
         r2s.append(r2)
         pearson.append(corr)
         feats.append(j)
         mse.append(mse_score)
-        accuracy.append(acc_score)
-    a = pd.DataFrame(list(zip(feats, pearson, r2s, feat_import)), columns=['feat', 'pearson', 'R2', 'importances'])
-    a.to_excel("Output_data/scram_loss_feats" + id + ".xlsx")
+    # a = pd.DataFrame(list(zip(feats, pearson, r2s, feat_import)), columns=['feat', 'pearson', 'R2', 'importances'])
+    # a.to_excel("Output_data/scram_loss_feats" + id + ".xlsx")
 
-    fig, ax = plt.subplots()
+
+
+    plt.plot(feats, pearson, color='tab:blue', marker='o', label= 'pearson')
+    plt.plot(feats, r2s, color='tab:red', marker='s', label='R2')
+    plt.plot(feats, mse, color='tab:green', marker='^', label='mse')
+    plt.plot(feats, feat_import, color='tab:purple', marker='x', label='feature importance')
     plt.xticks(rotation=90)
-    ax.plot(feats, pearson, color='tab:blue', marker='o', label='pearson')
-    ax.plot(feats, r2s, color='tab:red', marker='s', label='R2')
-    ax.plot(feats, mse, color='tab:green', marker='^', label='neg mse')
-    ax.plot(feats, accuracy, color='tab:orange', marker='*', label='accuracy')
-    ax.plot(feats, feat_import, color='tab:purple', marker='x', label='feature importance')
-    ax.legend()
+    plt.legend()
 
     plt.title('Score as a function of feature scrambling\n'+id)
     plt.savefig('Output_data/FeatScramLoss' + id + '.png', bbox_inches='tight')
@@ -102,14 +100,12 @@ def feat_drop(df, label, model, identifier, test_percent):
     r2s = []
     pearson = []
     mse = []
-    accuracy = []
     x_train, x_test, y_train, y_test = train_test_split(df, label, test_size=test_percent, random_state=42)
     model.fit(x_train, y_train)
     predictions = model.predict(x_test)
     r2 = r2_score(y_test, predictions)
     corr, _ = pearsonr(y_test, predictions)
     mse_score = mean_squared_error(y_test, predictions)
-    acc_score = accuracy_score(y_test, predictions.round())
     a = list(zip(model.feature_importances_, model.feature_names_in_))
     a.sort(reverse=True)
     feat_import = model.feature_importances_
@@ -121,7 +117,6 @@ def feat_drop(df, label, model, identifier, test_percent):
     r2s.append(r2)
     pearson.append(corr)
     mse.append(mse_score)
-    accuracy.append(acc_score)
 
     df_3 = df.copy()
     for i in sorted_cols:
@@ -135,22 +130,18 @@ def feat_drop(df, label, model, identifier, test_percent):
         r2 = r2_score(y_test, predictions)
         corr, _ = pearsonr(y_test, predictions)
         mse_score = mean_squared_error(y_test, predictions)
-        acc_score = accuracy_score(y_test, predictions.round())
         r2s.append(r2)
         pearson.append(corr)
         mse.append(mse_score)
-        accuracy.append(acc_score)
         feats.append(i)
 
     # df_out = pd.DataFrame(list(zip(feats, pearson, r2s, mse, accuracy)), columns=['dropped feat', 'Pearson', 'r2', 'neg_mse', 'accuracy'])
     # df_out.to_excel("Output_data/feat_drop_cumulative" + id + ".xlsx")
-    plt.close('all')
     fig, ax = plt.subplots()
     plt.xticks(rotation=90)
     ax.plot(feats, pearson, color='tab:blue', marker='o',label='pearson')
     ax.plot(feats, r2s, color='tab:red', marker='s',label='R2')
-    ax.plot(feats, mse, color='tab:green', marker='^',label='neg mse')
-    ax.plot(feats, accuracy, color='tab:orange', marker='*',label='accuracy')
+    ax.plot(feats, mse, color='tab:green', marker='^',label='mse')
     ax.plot(feats, feat_import, color='tab:purple', marker='x',label='feature importance')
     ax.legend()
 
@@ -162,7 +153,7 @@ def feat_drop(df, label, model, identifier, test_percent):
 
 
 def scorer(df, label, model, identifier, folds):
-    from sklearn.model_selection import StratifiedKFold
+
     id=identifier
     y = label
     X = df
@@ -172,13 +163,13 @@ def scorer(df, label, model, identifier, folds):
     r2_scores = []
     mse = []
     # Split your data into 10 folds using KFold
-    kfold = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
+    kfold = KFold(n_splits=folds, shuffle=True, random_state=42)
 
     # Create a 2x1 subplot figure for the scores and the average/standard deviation
-    fig, axs = plt.subplots(2, 1, figsize=(8, 8))
+
 
     # Loop through each fold and train/test a linear regression model
-    for fold_idx, (train_index, test_index) in enumerate(kfold.split(X, y)):
+    for train_index, test_index in kfold.split(X, y):
         # Split the data into training and test sets
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y[train_index], y[test_index]
@@ -190,32 +181,37 @@ def scorer(df, label, model, identifier, folds):
         y_pred = model.predict(X_test)
         pearson, _ = pearsonr(y_test, y_pred)
         r2 = r2_score(y_test, y_pred)
+        mse_score = mean_squared_error(y_test,y_pred)
 
         # Append the scores for this fold to the lists
         pearson_scores.append(pearson)
         r2_scores.append(r2)
         mse.append(mse_score)
 
-        # Plot the Pearson and R2 scores for this fold on a separate subplot
-        axs[0].plot(fold_idx, pearson, 'bo',label='Pearson')
-        axs[0].plot(fold_idx, r2, 'go',label='R2')
-        axs[0].plot(fold_idx, mse_score, 'x',label='MSE')
+   #plot individual and aggregate scores for each scoring method
+    fold_idx = range(len(pearson_scores))
+    plt.plot(fold_idx, pearson_scores, 'bo',label='Pearson')
+    plt.plot(fold_idx, r2_scores, 'go',label='R2')
+    plt.plot(fold_idx, mse, 'kx',label='MSE')
+    plt.legend()
+    plt.title('Scores\n'+id)
+    plt.xlabel('Fold index')
+    plt.ylabel('Score')
+    plt.tight_layout()
+    fig = plt.figure()
+    fig.set_dpi(300)
+    plt.savefig('Output_data/scores_line' + id + '.png', bbox_inches='tight')
 
-        axs[0].legend()
-
-    # Set the title and labels for the subplot
-    axs[0].set_title('Scores\n'+id)
-    axs[0].set_xlabel('Fold index')
-    axs[0].set_ylabel('Score')
+    plt.close('all')
 
     # Plot the average and standard deviation of the scores on a separate subplot
-    axs[1].bar(['Pearson', 'R2','MSE'], [np.mean(pearson_scores), np.mean(r2_scores),np.mean(mse)],
+    plt.bar(['Pearson', 'R2', 'MSE'], [np.mean(pearson_scores), np.mean(r2_scores), np.mean(mse)],
                yerr=[np.std(pearson_scores), np.std(r2_scores), np.std(mse)])
-    axs[1].set_title('Average and standard deviation of scores')
-    axs[1].set_ylabel('Score')
+    plt.title('Average and standard deviation of scores')
+    plt.ylabel('Score')
     # Show the plots
     plt.tight_layout()
-    plt.savefig('Output_data/foldscores' + id + '.png', bbox_inches='tight')
+    plt.savefig('Output_data/Scores_ave' + id + '.png', bbox_inches='tight')
     plt.close('all')
     print('Scorer ran successfully')
 
