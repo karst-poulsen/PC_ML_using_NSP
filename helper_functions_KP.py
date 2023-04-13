@@ -19,8 +19,6 @@ from sklearn.metrics import d2_tweedie_score
 from sklearn.model_selection import KFold
 
 
-
-
 def feat_elim_rand(df, labels, out_name, feats, estimator, step):
     estimator = RandomForestRegressor(n_estimators=estimator)
     selector = RFE(estimator, n_features_to_select=feats, step=step)
@@ -161,9 +159,8 @@ def feat_drop(df, label, model, identifier, test_percent):
     print('Feat drop ran successfully')
 
 
-
-def feat_drop_multifold(df, label, model, identifier, test_percent,folds):
-    id=identifier
+def feat_drop_multifold(df, label, model, identifier, test_percent, folds):
+    id = identifier
     feats = []
     r2s = []
     pearson = []
@@ -273,7 +270,6 @@ def feat_drop_multifold(df, label, model, identifier, test_percent,folds):
     print('Feat drop multifold ran successfully')
 
 
-
 def scorer(df, label, model, identifier, folds):
     id = identifier
     y = label
@@ -308,7 +304,6 @@ def scorer(df, label, model, identifier, folds):
         r2_scores.append(r2)
         mse.append(mse_score)
 
-
     fig, axs = plt.subplots(1, 2, figsize=(12, 6))
 
     # plot individual and aggregate scores for each scoring method
@@ -336,10 +331,11 @@ def scorer(df, label, model, identifier, folds):
 
     print('Scorer ran successfully')
 
+
 def PCA_plot(df, label, identifier):
     from sklearn.decomposition import PCA
     from sklearn.preprocessing import StandardScaler
-    id=identifier
+    id = identifier
     scaler = StandardScaler()
     X_std = scaler.fit_transform(df)
     pca = PCA(n_components=5)
@@ -351,7 +347,6 @@ def PCA_plot(df, label, identifier):
     plt.savefig('Output_data/PCA' + id + '.png')
     plt.close('all')
     print('PCA Ran successfully')
-
 
 
 def RFECV_plot(df, label, model, identifier, folds, step):
@@ -393,12 +388,13 @@ def RFECV_plot(df, label, model, identifier, folds, step):
     print('Recursive Feature Elimination with Correlated Features ran successfully')
     return df
 
+
 def lasso_feature_selection(df, label, identifier):
     from sklearn.linear_model import Lasso
     from sklearn.preprocessing import StandardScaler
     from sklearn.pipeline import Pipeline
-    X=df
-    y=label
+    X = df
+    y = label
 
     # Scale the input features
     scaler = StandardScaler()
@@ -417,7 +413,7 @@ def lasso_feature_selection(df, label, identifier):
     sorted_idx = importances.argsort()[::-1]
     importances = importances[sorted_idx]
     feature_names = feature_names[sorted_idx]
-    id=identifier
+    id = identifier
     # Create plot of feature importances
     plt.figure()
     plt.title("Feature importances using Lasso Regression for {}".format(id))
@@ -426,12 +422,13 @@ def lasso_feature_selection(df, label, identifier):
     plt.xlim([-1, X.shape[1]])
     plt.tight_layout()
     plt.savefig('Output_data/LassoReg_{}.png'.format(id), bbox_inches='tight')
-    importance_plot = plt.gcf()
+    plt.close('all')
 
     # Reduce dataset to high-importance features
-    X_reduced = X.iloc[:,sorted_idx[:10]]
+    X_reduced = X.iloc[:, sorted_idx[:10]]
 
-    return X_reduced, importance_plot
+    return X_reduced
+
 
 if __name__ == "__main__":
     print(type(ProteinAnalysis))
