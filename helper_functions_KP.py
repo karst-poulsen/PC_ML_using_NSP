@@ -350,6 +350,8 @@ def PCA_plot(df, label, identifier):
     plt.ylabel('PC2')
     plt.savefig('Output_data/PCA' + id + '.png')
     plt.close('all')
+    print('PCA Ran successfully')
+
 
 
 def RFECV_plot(df, label, model, identifier, folds, step):
@@ -391,10 +393,13 @@ def RFECV_plot(df, label, model, identifier, folds, step):
     print('Recursive Feature Elimination with Correlated Features ran successfully')
     return df
 
-def lasso_feature_selection(X, y, identifier):
+def lasso_feature_selection(df, label, identifier):
     from sklearn.linear_model import Lasso
     from sklearn.preprocessing import StandardScaler
     from sklearn.pipeline import Pipeline
+    X=df
+    y=label
+
     # Scale the input features
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
@@ -412,10 +417,10 @@ def lasso_feature_selection(X, y, identifier):
     sorted_idx = importances.argsort()[::-1]
     importances = importances[sorted_idx]
     feature_names = feature_names[sorted_idx]
-
+    id=identifier
     # Create plot of feature importances
     plt.figure()
-    plt.title("Feature importances using Lasso Regression for {}".format(identifier))
+    plt.title("Feature importances using Lasso Regression for {}".format(id))
     plt.bar(range(X.shape[1]), importances)
     plt.xticks(range(X.shape[1]), feature_names, rotation=90)
     plt.xlim([-1, X.shape[1]])
