@@ -315,10 +315,15 @@ def scorer(df, label, model, identifier, folds):
     axs[0].set_title('Individual Scores\n{}'.format(id))
     axs[0].set_xlabel('Fold Index')
     axs[0].set_ylabel('Score')
-
+    pearson_mean = np.mean(pearson_scores)
+    R2_mean =np.mean(r2_scores)
+    MSE_mean = np.mean(mse)
+    pearson_std = np.std(pearson_scores)
+    R2_std = np.std(r2_scores)
+    MSE_std = np.std(mse)
     # plot the average and standard deviation of the scores on a separate subplot
-    axs[1].bar(['Pearson', 'R2', 'MSE'], [np.mean(pearson_scores), np.mean(r2_scores), np.mean(mse)],
-               yerr=[np.std(pearson_scores), np.std(r2_scores), np.std(mse)])
+    axs[1].bar(['Pearson', 'R2', 'MSE'], [pearson_mean, R2_mean, MSE_mean],
+               yerr=[pearson_std, R2_std, MSE_std])
     axs[1].set_title('Average and Standard Deviation of Scores')
     axs[1].set_ylabel('Score')
 
@@ -328,8 +333,10 @@ def scorer(df, label, model, identifier, folds):
     plt.tight_layout()
     plt.savefig('Output_data/scores_{}.png'.format(id), bbox_inches='tight')
     plt.close(fig)
-
+    data=[[pearson_mean,pearson_std,R2_mean,R2_std,MSE_mean,MSE_std,df.shape[1]],id]
+    scores=pd.DataFrame(data,columns=['pearson_mean','pearson_std','R2_mean','R2_std','MSE_mean','MSE_std','Number of Features','ID'])
     print('Scorer ran successfully')
+    return scores
 
 
 def PCA_plot(df, label, identifier):
