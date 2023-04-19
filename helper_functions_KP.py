@@ -14,6 +14,7 @@ from sklearn.model_selection import train_test_split
 from scipy.stats import pearsonr
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import d2_tweedie_score
 from sklearn.model_selection import KFold
@@ -358,13 +359,13 @@ def PCA_plot(df, label, identifier):
     print('PCA Ran successfully')
 
 
-def RFECV_plot(df, label, model, identifier, folds, step):
+def RFECV_plot(df, label, model, identifier, folds, step, scoring='neg_mean_squared_error'):
     from sklearn.feature_selection import RFECV
     id = identifier
     min_feats = 6
     cv = KFold(n_splits=folds, shuffle=True, random_state=42)
     estimator = model
-    selector = RFECV(estimator=estimator, cv=cv, scoring='neg_mean_squared_error', min_features_to_select=min_feats,
+    selector = RFECV(estimator=estimator, cv=cv, scoring=scoring, min_features_to_select=min_feats,
                      step=step)
     selector = selector.fit(df, label)
     selector.support_
@@ -382,11 +383,11 @@ def RFECV_plot(df, label, model, identifier, folds, step):
     y = selector.cv_results_["mean_test_score"]
     err = selector.cv_results_["std_test_score"]
 
-    ax.plot(x, -y, 'k-', label='Mean Test Accuracy')
-    ax.fill_between(x, -y - err, -y + err, alpha=0.2, label='Standard Deviation')
+    ax.plot(x, y, 'k-', label=scoring)
+    ax.fill_between(x, y - err, y + err, alpha=0.2, label='Standard Deviation')
     ax.legend()
     ax.set_xlabel('Number of Features Selected')
-    ax.set_ylabel('Mean squared error')
+    ax.set_ylabel(scoring)
     ax.set_title('Recursive Feature Elimination with Correlated Features\n{}'.format(id))
 
     fig.set_dpi(300)
