@@ -362,7 +362,7 @@ def PCA_plot(df, label, identifier):
 def RFECV_plot(df, label, model, identifier, folds, step, scoring='neg_mean_squared_error'):
     from sklearn.feature_selection import RFECV
     id = identifier
-    min_feats = 6
+    min_feats = 8
     cv = KFold(n_splits=folds, shuffle=True, random_state=42)
     estimator = model
     selector = RFECV(estimator=estimator, cv=cv, scoring=scoring, min_features_to_select=min_feats,
