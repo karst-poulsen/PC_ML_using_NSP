@@ -18,6 +18,13 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import d2_tweedie_score
 from sklearn.model_selection import KFold
+from yellowbrick.datasets import load_credit
+from yellowbrick.model_selection import RFECV
+from sklearn.metrics import mean_squared_error
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LinearRegression
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 def feat_elim_rand(df, labels, out_name, feats, estimator, step):
@@ -397,6 +404,53 @@ def RFECV_plot(df, label, model, identifier, folds, step, scoring='neg_mean_squa
 
     print('Recursive Feature Elimination with Correlated Features ran successfully')
     return df
+
+
+def RFECV_plot_yb(df, label, model, identifier, folds, step, scoring='neg_mean_squared_error'):
+    min_feats = 8
+    cv = KFold(n_splits=folds, shuffle=True, random_state=42)
+    estimator = model
+    selector = RFECV(estimator=estimator, cv=cv, scoring=scoring, min_features_to_select=min_feats,
+                     step=step)
+    selector.fit(df, label)
+    feat_list2=selector.get_feature_names_out()
+    df2=df[feat_list2].copy()
+
+    fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
+
+    # Plot RFECV visualizer
+    visualizer = RFECV(estimator, cv=cv, scoring=scoring, step=step)
+    visualizer.fit(df, label)
+    visualizer.show(ax=ax[0])
+
+    # Plot feature importances
+    if hasattr(estimator, 'coef_'):
+        importances = estimator.coef_
+    elif hasattr(estimator, 'feature_importances_'):
+        importances = estimator.feature_importances_
+    else:
+        raise AttributeError('Estimator does not have a coefficient or feature_importances_ attribute.')
+
+    std = np.std([tree.feature_importances_ for tree in estimator.estimators_],
+                 axis=0)
+    indices = np.argsort(importances)[::-1]
+    names = df.columns
+
+    ax[1].set_title("Feature importances")
+    ax[1].bar(range(df.shape[1]), importances[indices], color="r", yerr=std[indices], align="center")
+    ax[1].set_xticks(range(df.shape[1]))
+    ax[1].set_xticklabels(names[indices], rotation=90)
+    ax[1].set_xlim([-1, df.shape[1]])
+
+    fig.suptitle("Recursive Feature Elimination with Cross-Validation\n{}".format(identifier))
+    fig.tight_layout()
+    fig.subplots_adjust(top=0.9)
+
+    plt.savefig('Output_data/RFECV_{}.png'.format(identifier), bbox_inches='tight')
+    plt.show()
+
+    return df2
+
 
 
 def lasso_feature_selection(df, label, identifier):
