@@ -279,7 +279,6 @@ def feat_drop_multifold(df, label, model, identifier, test_percent, folds):
 
 
 def scorer(df, label, model, identifier, folds):
-    id = identifier
     y = label
     X = df
 
@@ -320,7 +319,7 @@ def scorer(df, label, model, identifier, folds):
     axs[0].plot(fold_idx, r2_scores, 'go', label='R2')
     axs[0].plot(fold_idx, mse, 'kx', label='MSE')
     axs[0].legend()
-    axs[0].set_title('Individual Scores\n{}'.format(id))
+    axs[0].set_title('Individual Scores\n{}'.format(identifier))
     axs[0].set_xlabel('Fold Index')
     axs[0].set_ylabel('Score')
 
@@ -341,12 +340,14 @@ def scorer(df, label, model, identifier, folds):
     fig.subplots_adjust(wspace=0.3)
     fig.set_dpi(300)
     plt.tight_layout()
-    plt.savefig('Output_data/scores_{}.png'.format(id), bbox_inches='tight')
+    plt.savefig('Output_data/scores_{}.png'.format(identifier), bbox_inches='tight')
     plt.close(fig)
-    data=[[pearson_mean,pearson_std,R2_mean,R2_std,MSE_mean,MSE_std,df.shape[1],id,feat_import,df.columns.tolist()]]
-    scores=pd.DataFrame(data,columns=['pearson_mean','pearson_std','R2_mean','R2_std','MSE_mean','MSE_std','Number of Features','ID','Feature Importances','Features'])
+    data=[[pearson_mean,pearson_std,R2_mean,R2_std,MSE_mean,MSE_std,df.shape[1],identifier]]
+    feat_scores=list(zip(df.columns.tolist(),feat_import,))
+    scores=pd.DataFrame(data,columns=['pearson_mean','pearson_std','R2_mean','R2_std','MSE_mean','MSE_std','Number of Features','ID'])
+    feats=pd.DataFrame(feat_scores,columns=['Features','Importance'+identifier])
     print('Scorer ran successfully')
-    return scores
+    return scores, feats
 
 
 def PCA_plot(df, label, identifier):
