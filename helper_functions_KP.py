@@ -25,6 +25,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 import numpy as np
+plt.style.use('ggplot')
 
 
 def feat_elim_rand(df, labels, out_name, feats, estimator, step):
