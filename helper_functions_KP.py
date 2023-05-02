@@ -25,6 +25,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.metrics import f1_score, roc_auc_score, accuracy_score, precision_score, recall_score
 plt.style.use('ggplot')
 
 
@@ -346,6 +347,91 @@ def scorer(df, label, model, identifier, folds):
     data=[[pearson_mean,pearson_std,R2_mean,R2_std,MSE_mean,MSE_std,df.shape[1],identifier]]
     feat_scores=list(zip(df.columns.tolist(),feat_import,))
     scores=pd.DataFrame(data,columns=['pearson_mean','pearson_std','R2_mean','R2_std','MSE_mean','MSE_std','Number of Features','ID'])
+    feats=pd.DataFrame(feat_scores,columns=['Features','Importance'+identifier])
+    print('Scorer ran successfully')
+    return scores, feats
+
+def scorer_RFC(df, label, model, identifier, folds):
+    y = label
+    X = df
+
+    # Initialize lists to store Pearson and R2 scores for each fold
+    F1_scores = []
+    auroc_scores = []
+    accuracy_scores = []
+    precision_scores = []
+    recall_scores = []
+    # Split your data into 10 folds using KFold
+    kfold = KFold(n_splits=folds, shuffle=True, random_state=42)
+
+    # Create a 2x1 subplot figure for the scores and the average/standard deviation
+
+    # Loop through each fold and train/test a linear regression model
+    for train_index, test_index in kfold.split(X, y):
+        # Split the data into training and test sets
+        X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+        y_train, y_test = y[train_index], y[test_index]
+
+        # Fit a linear regression model on the training set
+        model.fit(X_train, y_train)
+
+        # Predict on the test set and evaluate the model
+        y_pred = model.predict(X_test)
+        f1 = f1_score(y_test, y_pred)
+        auroc = roc_auc_score(y_test, y_pred)
+        accuracy = accuracy_score(y_test, y_pred)
+        precision = precision_score(y_test, y_pred)
+        recall = recall_score(y_test, y_pred)
+
+        # Append the scores for this fold to the lists
+        F1_scores.append(f1)
+        auroc_scores.append(auroc)
+        accuracy_scores.append(accuracy)
+        precision_scores.append(precision)
+        recall_scores.append(recall)
+
+
+    fig, axs = plt.subplots(1, 2, figsize=(12, 6))
+
+    # plot individual and aggregate scores for each scoring method
+    fold_idx = range(len(F1_scores))
+    axs[0].plot(fold_idx, F1_scores, 'bo', label='F1')
+    axs[0].plot(fold_idx, auroc_scores, 'go', label='AUROC')
+    axs[0].plot(fold_idx, accuracy_scores, 'kx', label='Accuracy')
+    axs[0].legend()
+    axs[0].set_title('Individual Scores\n{}'.format(identifier))
+    axs[0].set_xlabel('Fold Index')
+    axs[0].set_ylabel('Score')
+
+    F1_mean = np.mean(F1_scores)
+    auroc_mean =np.mean(auroc_scores)
+    acc_mean = np.mean(accuracy_scores)
+    precision_mean = np.mean(precision_scores)
+    recall_mean = np.mean(recall_scores)
+
+    F1_std = np.std(F1_scores)
+    auroc_std =np.std(auroc_scores)
+    acc_std = np.std(accuracy_scores)
+    precision_std = np.std(precision_scores)
+    recall_std = np.std(recall_scores)
+
+    feat_import = model.feature_importances_
+    # plot the average and standard deviation of the scores on a separate subplot
+    axs[1].bar(['F1', 'AUROC', 'Accuracy','Precision','Recall'],
+               [F1_mean, auroc_mean, acc_mean,precision_mean,recall_mean],
+               yerr=[F1_std, auroc_std, acc_std,precision_std,recall_std])
+    axs[1].set_title('Average and Standard Deviation of Scores')
+    axs[1].set_ylabel('Score')
+
+    # adjust spacing between subplots and save the figure
+    fig.subplots_adjust(wspace=0.3)
+    fig.set_dpi(300)
+    plt.tight_layout()
+    plt.savefig('Output_data/scores_{}.png'.format(identifier), bbox_inches='tight')
+    plt.close(fig)
+    data=[[F1_mean,F1_std,auroc_mean,acc_std,acc_mean,acc_std,precision_mean,precision_std,recall_mean,recall_std,df.shape[1],identifier]]
+    feat_scores=list(zip(df.columns.tolist(),feat_import,))
+    scores=pd.DataFrame(data,columns=['F1_mean','F1_std','AUROC_mean','AUROC_std','Accuracy_mean','Accuracy_std','precision_mean','precision_std','recall_mean','recall_std','Number of Features','ID'])
     feats=pd.DataFrame(feat_scores,columns=['Features','Importance'+identifier])
     print('Scorer ran successfully')
     return scores, feats
