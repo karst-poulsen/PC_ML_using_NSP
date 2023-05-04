@@ -19,7 +19,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import d2_tweedie_score
 from sklearn.model_selection import KFold
 from yellowbrick.datasets import load_credit
-from yellowbrick.model_selection import RFECV
+from yellowbrick.model_selection import RFECV as RFECVyb
 from sklearn.metrics import mean_squared_error
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LinearRegression
