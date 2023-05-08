@@ -281,6 +281,10 @@ def feat_drop_multifold(df, label, model, identifier, test_percent, folds):
 
 
 def scorer(df, label, model, identifier, folds):
+    """
+
+    :type identifier: string
+    """
     y = label
     X = df
 
@@ -456,7 +460,7 @@ def PCA_plot(df, label, identifier):
 
 def RFECV_plot(df, label, model, identifier, folds, step, scoring='neg_mean_squared_error'):
     from sklearn.feature_selection import RFECV
-    id = identifier
+
     min_feats = 8
     cv = KFold(n_splits=folds, shuffle=True, random_state=42)
     estimator = model
@@ -483,11 +487,11 @@ def RFECV_plot(df, label, model, identifier, folds, step, scoring='neg_mean_squa
     ax.legend()
     ax.set_xlabel('Number of Features Selected')
     ax.set_ylabel(scoring)
-    ax.set_title('Recursive Feature Elimination with Correlated Features\n{}'.format(id))
+    ax.set_title('Recursive Feature Elimination with Correlated Features\n{}'.format(identifier))
 
     fig.set_dpi(300)
     plt.tight_layout()
-    plt.savefig('Output_data/RFECV_{}.png'.format(id), bbox_inches='tight')
+    plt.savefig('Output_data/RFECV_{}.png'.format(identifier), bbox_inches='tight')
     plt.close(fig)
 
     print('Recursive Feature Elimination with Correlated Features ran successfully')
