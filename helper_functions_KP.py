@@ -23,6 +23,7 @@ from yellowbrick.model_selection import RFECV as RFECVyb
 from sklearn.metrics import mean_squared_error
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LinearRegression
+from scipy.stats import spearmanr
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import f1_score, roc_auc_score, accuracy_score, precision_score, recall_score
@@ -292,6 +293,7 @@ def scorer(df, label, model, identifier, folds):
     pearson_scores = []
     r2_scores = []
     mse = []
+    spear=[]
     # Split your data into 10 folds using KFold
     kfold = KFold(n_splits=folds, shuffle=True, random_state=42)
 
@@ -311,11 +313,13 @@ def scorer(df, label, model, identifier, folds):
         pearson, _ = pearsonr(y_test, y_pred)
         r2 = r2_score(y_test, y_pred)
         mse_score = mean_squared_error(y_test, y_pred)
+        spear_score= spearmanr(y_pred,y_test)
 
         # Append the scores for this fold to the lists
         pearson_scores.append(pearson)
         r2_scores.append(r2)
         mse.append(mse_score)
+        spear.append(spear_score)
 
     fig, axs = plt.subplots(1, 2, figsize=(12, 6))
 
@@ -332,25 +336,28 @@ def scorer(df, label, model, identifier, folds):
     pearson_mean = np.mean(pearson_scores)
     R2_mean =np.mean(r2_scores)
     MSE_mean = np.mean(mse)
+    spear_mean = np.mean(spear)
     pearson_std = np.std(pearson_scores)
     R2_std = np.std(r2_scores)
     MSE_std = np.std(mse)
+    spear_std = np.std(spear)
+
     feat_import = model.feature_importances_
     # plot the average and standard deviation of the scores on a separate subplot
-    axs[1].bar(['Pearson', 'R2', 'MSE'], [pearson_mean, R2_mean, MSE_mean],
-               yerr=[pearson_std, R2_std, MSE_std])
-    axs[1].set_title('Average and Standard Deviation of Scores')
-    axs[1].set_ylabel('Score')
+    # axs[1].bar(['Pearson', 'R2', 'MSE'], [pearson_mean, R2_mean, MSE_mean],
+    #            yerr=[pearson_std, R2_std, MSE_std])
+    # axs[1].set_title('Average and Standard Deviation of Scores')
+    # axs[1].set_ylabel('Score')
 
     # adjust spacing between subplots and save the figure
-    fig.subplots_adjust(wspace=0.3)
-    fig.set_dpi(300)
-    plt.tight_layout()
-    plt.savefig('Output_data/scores_{}.png'.format(identifier), bbox_inches='tight')
-    plt.close(fig)
-    data=[[pearson_mean,pearson_std,R2_mean,R2_std,MSE_mean,MSE_std,df.shape[1],identifier]]
+    # fig.subplots_adjust(wspace=0.3)
+    # fig.set_dpi(300)
+    # plt.tight_layout()
+    # plt.savefig('Output_data/scores_{}.png'.format(identifier), bbox_inches='tight')
+    # plt.close(fig)
+    data=[[pearson_mean,pearson_std,R2_mean,R2_std,MSE_mean,MSE_std,spear_mean,spear_std,df.shape[1],identifier]]
     feat_scores=list(zip(df.columns.tolist(),feat_import,))
-    scores=pd.DataFrame(data,columns=['pearson_mean','pearson_std','R2_mean','R2_std','MSE_mean','MSE_std','Number of Features','ID'])
+    scores=pd.DataFrame(data,columns=['pearson_mean','pearson_std','R2_mean','R2_std','MSE_mean','MSE_std','spearman_mean','spearman_std','Number of Features','ID'])
     feats=pd.DataFrame(feat_scores,columns=['Features','Importance'+identifier])
     print('Scorer ran successfully')
     return scores, feats
