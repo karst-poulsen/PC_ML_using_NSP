@@ -300,7 +300,6 @@ def netsurfp_2_data_processing(unique_id_list, complete_netsurfp_df):
 
         # creates data frame from above dic
         if first_pass:
-            netsurfp_processed_data = pd.DataFrame()
             netsurfp_processed_data = pd.DataFrame.from_dict(data_to_update, orient='index').transpose()
             first_pass = False
         # appends data to dataframe created above after first loop iteration
